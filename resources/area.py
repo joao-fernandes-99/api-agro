@@ -1,8 +1,11 @@
 from flask_restful import Resource, reqparse
 from models.area import area_information
+from datasets.classification import prever
+import numpy as np
 import psycopg2
 import pandas as pd
 import statistics
+import json
 
 path_params = reqparse.RequestParser()
 path_params.add_argument('data_inicio', type=str, required=True, help="The argument 'data_inicio' is required")
@@ -74,17 +77,31 @@ class ProcessInformation(Resource):
         dict_temp_media_dia = {}
         dict_humidade_media_dia = {}
         dict_uv_media_dia = {}
+        dict_condicao_dia = {}
 
         for y in array_dias:
-            dict_temp_media_dia[y] = statistics.mean(list_temperatura_dia[y])
-            dict_humidade_media_dia [y] = statistics.mean(list_humidade_dia[y])
-            dict_uv_media_dia [y] = statistics.mean(list_uv_dia[y])
+            dict_temp_media_dia[y] = str(statistics.mean(list_temperatura_dia[y]))
+            dict_humidade_media_dia[y] = str(statistics.mean(list_humidade_dia[y]))
+            dict_uv_media_dia[y] = str(statistics.mean(list_uv_dia[y]))
+            dict_condicao_dia[y] = prever(np.array([[min(list_temperatura_dia[y]), max(list_temperatura_dia[y]),
+                                            min(list_humidade_dia[y]), max(list_humidade_dia[y]),
+                                            min(list_uv_dia[y]), max(list_uv_dia[y])]])).replace("'","").replace("[","").replace("]","")
+            
+            
+       
+        periodo_temperatura = pd.Series(array_temperatura, index=array_index_temperatura)
+        periodo_humidade = pd.Series(array_humidade, index=array_index_temperatura)
+        periodo_uv = pd.Series(array_uv, index=array_index_temperatura)
 
-        print(dict_temp_media_dia)
-        print(dict_humidade_media_dia)
-        print(dict_uv_media_dia)
-#----------------------------#-------------------------------------------------#      
-       # print(array_dias)
+        response = {}
+        response['media_temp_dia'] = dict_temp_media_dia
+        response['media_humi_dia'] = dict_humidade_media_dia
+        response['media_uv_dia'] =  dict_uv_media_dia
+        response['condicao_dia'] = dict_condicao_dia
+        response['media_temp_periodo'] = str(periodo_temperatura.mean())
+        response['media_humi_periodo'] = str(periodo_humidade.mean())
+        response['media_uv_periodo'] = str(periodo_uv.mean())
+        
         #Utilizado para pegar a media da temperatura em todo o pediodo
         '''    
         temperatura = pd.Series(array_temperatura, index=array_index_temperatura)
@@ -104,9 +121,7 @@ class ProcessInformation(Resource):
 
             })
         '''
-
-       
-        return {'message': 'OK'}, 200
+        return {'response': response}
 
 class Area(Resource):
     arguments = reqparse.RequestParser()

@@ -1,4 +1,6 @@
 from mon_engine import db_mon
+from datasets.classification import prever
+import numpy as np
 
 class area_information(db_mon.DynamicDocument):
    
@@ -9,13 +11,15 @@ class area_information(db_mon.DynamicDocument):
     name = db_mon.StringField()
 
     def json(self):
+        condicao = prever(np.array([[self.temp_ambiente,self.temp_ambiente,self.humi_solo,self.humi_solo,self.raio_uv,self.raio_uv]]))
         return {
             
             'temp_ambiente' : self.temp_ambiente,
             'humi_solo' : self.humi_solo,
             'raio_uv' : self.raio_uv,
             'data' : self.data,
-            'name': self.name
+            'name': self.name,
+            'condicao': condicao.replace("'","").replace("[","").replace("]","")
         }
     
     @classmethod
