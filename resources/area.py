@@ -1,6 +1,7 @@
 from flask_restful import Resource, reqparse
 from models.area import area_information
 from datasets.classification import prever
+from datetime import date
 import numpy as np
 import psycopg2
 import pandas as pd
@@ -126,9 +127,9 @@ class ProcessInformation(Resource):
 class Area(Resource):
     arguments = reqparse.RequestParser()
     arguments.add_argument('temp_ambiente', type=float, required=True, help="The Field 'temp_ambiente' is required")
-    arguments.add_argument('humi_solo', type=int, required=True, help="The Field 'humi_solo' is required")
+    arguments.add_argument('humi_solo', type=float, required=True, help="The Field 'humi_solo' is required")
     arguments.add_argument('raio_uv', type=int, required=True, help="The Field 'raio_uv' is required")
-    arguments.add_argument('data', required=True, help="The Field 'data' is required")
+    arguments.add_argument('data', required=False, help="The Field 'data' is required")
     arguments.add_argument('name')
 
 
@@ -143,6 +144,8 @@ class Area(Resource):
         dados = Area.arguments.parse_args()
         area = area_information.find_area(name_area)
         if area:
+            dados['data'] = str(date.today())
+            print(dados['data'])
             area.update_area(**dados)
             tupla = tuple([dados[chave] for chave in dados])
             conn = psycopg2.connect(host="localhost", database="plant", user="postgres", password="1234")
